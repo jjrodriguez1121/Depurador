@@ -17,6 +17,25 @@ No hace falta instalar Microsoft Excel. No se requieren rutas de un usuario
 específico ni activar manualmente el entorno virtual. Los lanzadores trabajan
 desde su propia carpeta, incluso si la ruta contiene espacios.
 
+### Crear una versión distribuible sin Python
+
+Para construir una versión autónoma de Windows, en el equipo de desarrollo:
+
+1. Ejecuta `instalar.cmd` una vez para crear `.venv`.
+2. Ejecuta `construir.cmd`. Instalará PyInstaller en `.venv` y creará
+   `dist\DepuradorTruking`.
+3. Distribuye la carpeta `dist\DepuradorTruking` completa. No distribuyas solo
+   el archivo `.exe`: necesita los archivos que están junto a él.
+4. En cada equipo, coloca esa carpeta en una ubicación permanente y ejecuta
+   el `crear_acceso_directo.cmd` que se incluye dentro de ella. El script crea
+   el acceso directo en el Escritorio con la ruta correcta de ese equipo.
+
+La versión autónoma incluye Python y las dependencias, por lo que el usuario
+final no necesita instalar Python, `pip`, Tcl/Tk ni Internet. Esta modalidad
+debe reconstruirse cuando cambie el código o `requirements.txt`. Para una
+instalación con desinstalador y actualizaciones, el siguiente paso sería crear
+un instalador MSI o Inno Setup a partir de la carpeta generada.
+
 Si trasladas el proyecto a otro equipo o ubicación, copia el código **sin `.venv`**
 y ejecuta allí `instalar.cmd`: los entornos virtuales no son portables.
 
