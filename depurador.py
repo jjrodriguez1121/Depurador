@@ -49,11 +49,12 @@ from depuracion.cruces import (
 )
 
 from salida.salida_excel import (
-    exportar_excel
+    exportar_excel,
+    preparar_exportacion
 )
 
 from salida.exportador_csv import (
-    exportar_csv
+    exportar_csv_desde_montaje
 )
 
 
@@ -165,7 +166,10 @@ def ejecutar_depuracion(
     ruta_excel,
     ruta_csv,
     minimo_coincidencias=1,
-    callback=None
+    callback=None,
+    confirmar_columnas_faltantes=None,
+    archivo_data=None,
+    archivo_filtros=None
 ):
     """
     Ejecuta el proceso completo de depuración.
@@ -193,6 +197,14 @@ def ejecutar_depuracion(
     callback:
         Función opcional utilizada por la interfaz gráfica
         para recibir información del progreso.
+
+    confirmar_columnas_faltantes:
+        Recibe las columnas ausentes y devuelve True para crearlas vacías.
+        Si devuelve False, se cancela antes de depurar o generar archivos.
+
+    archivo_data, archivo_filtros:
+        Archivos auxiliares elegidos por el usuario. Si se omiten al llamar
+        desde código, se conserva la búsqueda automática anterior.
 
     Retorna
     -------
@@ -296,7 +308,8 @@ def ejecutar_depuracion(
         archivo,
         fecha_montaje
     ) = cargar_y_preparar_datos(
-        archivo_origen
+        archivo_origen,
+        confirmar_columnas_faltantes=confirmar_columnas_faltantes
     )
 
 
@@ -520,7 +533,8 @@ def ejecutar_depuracion(
 
     montaje, rechazos = procesar_cruces(
         montaje,
-        rechazos
+        rechazos,
+        archivo_data=archivo_data
     )
 
 
@@ -608,7 +622,8 @@ def ejecutar_depuracion(
     montaje, rechazos = procesar_nombres_latinos(
         montaje,
         rechazos,
-        minimo_coincidencias
+        minimo_coincidencias,
+        archivo_filtros=archivo_filtros
     )
 
 
@@ -770,11 +785,15 @@ def ejecutar_depuracion(
     # GENERAR EXCEL
     # --------------------------------------------------------
 
+    base_export, montaje_export, rechazos_export = preparar_exportacion(
+        base, montaje, rechazos
+    )
     archivo_excel = exportar_excel(
-        base,
-        montaje,
-        rechazos,
-        ruta_excel
+        base_export,
+        montaje_export,
+        rechazos_export,
+        ruta_excel,
+        datos_preparados=True
     )
 
 
@@ -805,8 +824,8 @@ def ejecutar_depuracion(
     # GENERAR CSV
     # --------------------------------------------------------
 
-    archivo_csv = exportar_csv(
-        archivo_excel,
+    archivo_csv = exportar_csv_desde_montaje(
+        montaje_export,
         ruta_csv
     )
 
@@ -912,7 +931,7 @@ if __name__ == "__main__":
 
     print(
         "\nEste programa debe ser iniciado actualmente "
-        "desde interfaz.py."
+        "desde iniciar.cmd o con python iniciar.py."
     )
 
     print(

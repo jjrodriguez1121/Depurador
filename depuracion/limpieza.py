@@ -301,41 +301,11 @@ def limpiar_montaje(montaje):
     print("=" * 60)
 
 
-    # --------------------------------------------------------
-    # Legal_Name
-    # --------------------------------------------------------
-
-    montaje = limpiar_legal_name(
-        montaje
-    )
-
-
-    # --------------------------------------------------------
-    # Company_Rep1
-    # --------------------------------------------------------
-
-    montaje = limpiar_company_rep1(
-        montaje
-    )
-
-
-    # --------------------------------------------------------
-    # Insurer
-    # --------------------------------------------------------
-
-    montaje = limpiar_insurer(
-        montaje
-    )
-
-
-    # --------------------------------------------------------
-    # Email
-    # --------------------------------------------------------
-
-    montaje = limpiar_emails(
-        montaje
-    )
-
+    # Una sola copia protege la entrada durante las cuatro transformaciones.
+    montaje = montaje.copy()
+    for columna in ("Legal_Name", "Company_Rep1", "Insurer"):
+        montaje[columna] = montaje[columna].apply(limpiar_campo_texto)
+    montaje["Email"] = montaje["Email"].apply(limpiar_email)
 
     print("\nCampos limpiados:")
 

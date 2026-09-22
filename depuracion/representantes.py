@@ -21,6 +21,8 @@ import unicodedata
 
 import pandas as pd
 
+from depuracion.carga_datos import validar_archivo_entrada
+
 from config import (
     RUTA_FILTROS,
     EXTENSIONES_PERMITIDAS,
@@ -180,9 +182,12 @@ def normalizar_nombre(texto):
 #
 # ============================================================
 
-def cargar_filtros():
+def cargar_filtros(archivo_filtros=None):
 
-    archivo_filtros = buscar_archivo_filtros()
+    archivo_filtros = (
+        buscar_archivo_filtros() if archivo_filtros is None
+        else validar_archivo_entrada(archivo_filtros)
+    )
 
 
     print("\nArchivo FILTROS ESPAÑOL:")
@@ -261,6 +266,12 @@ def cargar_filtros():
     filtros_set = set(
         filtros
     )
+
+    if not filtros_set:
+        raise ValueError(
+            "El archivo FILTROS ESPAÑOL seleccionado no contiene nombres "
+            "utilizables en la primera columna."
+        )
 
 
     print(
@@ -486,14 +497,15 @@ def rechazar_sin_representante(
 def validar_nombres_latinos(
     montaje,
     rechazos,
-    minimo_coincidencias=1
+    minimo_coincidencias=1,
+    archivo_filtros=None
 ):
 
     # --------------------------------------------------------
     # Cargar nombres válidos.
     # --------------------------------------------------------
 
-    filtros_set = cargar_filtros()
+    filtros_set = cargar_filtros(archivo_filtros)
 
 
     # --------------------------------------------------------
@@ -607,7 +619,8 @@ def procesar_representantes(
 def procesar_nombres_latinos(
     montaje,
     rechazos,
-    minimo_coincidencias=1
+    minimo_coincidencias=1,
+    archivo_filtros=None
 ):
 
     # ========================================================
@@ -617,7 +630,8 @@ def procesar_nombres_latinos(
     montaje, rechazos = validar_nombres_latinos(
         montaje,
         rechazos,
-        minimo_coincidencias
+        minimo_coincidencias,
+        archivo_filtros=archivo_filtros
     )
 
 

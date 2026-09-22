@@ -35,9 +35,9 @@
 # ============================================================
 
 
-from pathlib import Path
+from config import RUTA_ARCHIVOS
 
-from tkinter import messagebox
+from interfaz.confirmacion import solicitar_confirmacion
 
 import customtkinter as ctk
 
@@ -320,9 +320,7 @@ class Aplicacion(ctk.CTk):
         # ====================================================
 
         ruta_imagen = (
-            Path(__file__).parent.parent
-            / "Archivos"
-            / "sidebar_trustcore.png"
+            RUTA_ARCHIVOS / "sidebar_trustcore.png"
         )
 
 
@@ -825,15 +823,13 @@ class Aplicacion(ctk.CTk):
             (
                 archivo_origen,
                 ruta_excel,
-                ruta_csv
+                ruta_csv,
+                archivo_data,
+                archivo_filtros
             )
         """
 
-        return (
-            self.gestor_archivos.archivo_origen,
-            self.gestor_archivos.ruta_excel,
-            self.gestor_archivos.ruta_csv
-        )
+        return self.gestor_archivos.obtener_rutas()
 
 
     # ========================================================
@@ -978,14 +974,16 @@ class Aplicacion(ctk.CTk):
 
         if proceso_activo:
 
-            confirmar = messagebox.askyesno(
+            confirmar = solicitar_confirmacion(
+                self,
                 "Proceso en ejecución",
                 (
                     "La depuración todavía está en ejecución.\n\n"
                     "Si cierras la aplicación, el proceso podría "
                     "interrumpirse.\n\n"
                     "¿Deseas cerrar la aplicación?"
-                )
+                ),
+                texto_confirmar="Salir"
             )
 
 
@@ -1000,9 +998,11 @@ class Aplicacion(ctk.CTk):
 
         else:
 
-            confirmar = messagebox.askyesno(
+            confirmar = solicitar_confirmacion(
+                self,
                 "Salir",
-                "¿Deseas cerrar el Depurador de Bases?"
+                "¿Deseas cerrar el Depurador de Bases?",
+                texto_confirmar="Salir"
             )
 
 

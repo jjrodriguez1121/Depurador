@@ -42,6 +42,8 @@ from datetime import date
 
 from pathlib import Path
 
+from depuracion.lectura_csv import leer_csv_base
+
 
 # ============================================================
 # 2. IMPORTAR CONFIGURACIÓN
@@ -144,7 +146,7 @@ def validar_archivo_entrada(archivo):
 # 5. CARGAR EL ARCHIVO
 # ============================================================
 
-def cargar_archivo(archivo):
+def cargar_archivo(archivo, conservar_original=False):
    
     # --------------------------------------------------------
     # Si el archivo es CSV
@@ -152,8 +154,8 @@ def cargar_archivo(archivo):
 
     if archivo.suffix.lower() == ".csv":
 
-        base = pd.read_csv(
-            archivo
+        base = leer_csv_base(
+            archivo, conservar_original=conservar_original
         )
 
 
@@ -164,7 +166,9 @@ def cargar_archivo(archivo):
     else:
 
         base = pd.read_excel(
-            archivo
+            archivo,
+            dtype=object if conservar_original else {"DOT": str},
+            keep_default_na=not conservar_original,
         )
 
 
@@ -175,7 +179,30 @@ def cargar_archivo(archivo):
 # 6. PREPARAR LA BASE
 # ============================================================
 
-def preparar_base(base):
+class DepuracionCancelada(Exception):
+    """El usuario decidió detener la depuración antes de preparar la base."""
+
+
+def preparar_base(base, confirmar_columnas_faltantes=None):
+    """Solicita autorización antes de crear las columnas que no existen.
+
+    El callback recibe la lista de columnas faltantes y devuelve True para
+    continuar. Sin callback, una base incompleta requiere confirmación explícita.
+    """
+    faltantes = [
+        columna for columna in COLUMNAS_NECESARIAS
+        if columna not in base.columns
+    ]
+
+    if faltantes:
+        if confirmar_columnas_faltantes is None:
+            raise ValueError(
+                "Faltan columnas necesarias: " + ", ".join(faltantes)
+                + ". Se requiere confirmación para crearlas vacías."
+            )
+
+        if not confirmar_columnas_faltantes(faltantes):
+            raise DepuracionCancelada("Depuración cancelada por el usuario.")
 
 
     # ========================================================
@@ -277,7 +304,10 @@ def agregar_motivo_rechazo(rechazos):
 # 12. FUNCIÓN PRINCIPAL DEL MÓDULO
 # ============================================================
 
-def cargar_y_preparar_datos(archivo_origen):
+def cargar_y_preparar_datos(
+    archivo_origen,
+    confirmar_columnas_faltantes=None
+):
     
     # ========================================================
     # 12.1. VALIDAR ARCHIVO
@@ -290,7 +320,9 @@ def cargar_y_preparar_datos(archivo_origen):
     # 12.2. CARGAR ARCHIVO
     # ========================================================
 
-    base = cargar_archivo(archivo)
+    # La copia original conserva las columnas adicionales, los textos y los
+    # vacíos. Solo la copia de trabajo se adapta al esquema de depuración.
+    base = cargar_archivo(archivo, conservar_original=True)
 
 
     # ========================================================
@@ -310,14 +342,14 @@ def cargar_y_preparar_datos(archivo_origen):
     # 12.4. PREPARAR BASE
     # ========================================================
 
-    base = preparar_base(base)
+    base_trabajo = preparar_base(base.copy(deep=True), confirmar_columnas_faltantes)
 
 
     # ========================================================
     # 12.5. CREAR MONTAJE
     # ========================================================
 
-    montaje = crear_montaje(base)
+    montaje = crear_montaje(base_trabajo)
 
 
     # ========================================================

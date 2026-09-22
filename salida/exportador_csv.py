@@ -2,7 +2,7 @@
 # EXPORTADOR CSV - TRUKING
 # ============================================================
 #
-# Este módulo toma la hoja "Montaje" del Excel generado
+# Este módulo toma la hoja "Montaje Español" del Excel generado
 # y construye el CSV requerido por la plataforma.
 #
 # No realiza depuración.
@@ -25,7 +25,9 @@ from datetime import date, datetime
 # 2. NOMBRE DE LA HOJA
 # ============================================================
 
-NOMBRE_HOJA = "Montaje"
+from config import NOMBRE_HOJA_MONTAJE
+
+NOMBRE_HOJA = NOMBRE_HOJA_MONTAJE
 
 
 # ============================================================
@@ -91,9 +93,18 @@ COLUMNAS_CSV = [
 # 4. CONVERTIR VALORES A TEXTO
 # ============================================================
 
+# Mantiene el tratamiento de vacíos de la lectura Excel anterior, sin depender
+# de APIs privadas de pandas ni volver a cargar el archivo.
+TEXTOS_VACIOS_EXCEL = frozenset({
+    "", "#N/A", "#N/A N/A", "#NA", "-1.#IND", "-1.#QNAN", "-NaN", "-nan",
+    "1.#IND", "1.#QNAN", "<NA>", "N/A", "NA", "NULL", "NaN", "None",
+    "n/a", "nan", "null",
+})
+
+
 def convertir_texto(valor):
 
-    if pd.isna(valor):
+    if pd.isna(valor) or (isinstance(valor, str) and valor in TEXTOS_VACIOS_EXCEL):
 
         return ""
 
@@ -224,7 +235,7 @@ def exportar_csv(
 ):
 
     """
-    Lee Montaje y genera el CSV final.
+    Lee la hoja de montaje configurada y genera el CSV final.
     """
 
     archivo_excel = Path(
@@ -232,65 +243,19 @@ def exportar_csv(
     )
 
 
-    ruta_csv = Path(
-        ruta_csv
-    )
-
-
-    # ========================================================
-    # INICIO
-    # ========================================================
-
-    print("=" * 60)
-
-    print("INICIO DEL EXPORTADOR CSV")
-
-    print("=" * 60)
-
-
-    # ========================================================
-    # VALIDAR EXCEL
-    # ========================================================
-
     if not archivo_excel.exists():
-
-        raise FileNotFoundError(
-            f"\nNo se encontró el archivo de depuración:\n"
-            f"{archivo_excel}"
-        )
+        raise FileNotFoundError(f"No se encontró el archivo: {archivo_excel}")
+    montaje = pd.read_excel(archivo_excel, sheet_name=NOMBRE_HOJA, dtype=object)
+    return exportar_csv_desde_montaje(montaje, ruta_csv)
 
 
-    print(
-        "\nArchivo de depuración encontrado:"
-    )
+def exportar_csv_desde_montaje(montaje, ruta_csv):
+    """Exporta los datos ya preparados, sin leer Excel ni modificar el montaje.
 
-
-    print(
-        archivo_excel
-    )
-
-
-    # ========================================================
-    # LEER MONTAJE
-    # ========================================================
-
-    print(
-        f"\nLeyendo hoja: {NOMBRE_HOJA}"
-    )
-
-
-    montaje = pd.read_excel(
-        archivo_excel,
-        sheet_name=NOMBRE_HOJA,
-        dtype=object
-    )
-
-
-    print(
-        f"Registros encontrados en Montaje: "
-        f"{len(montaje)}"
-    )
-
+    El proceso principal comparte esta tabla con el exportador Excel, incluidas
+    las fechas convertidas. exportar_csv mantiene compatibilidad con archivos.
+    """
+    ruta_csv = Path(ruta_csv)
 
     # ========================================================
     # COLUMNAS NECESARIAS
@@ -326,7 +291,7 @@ def exportar_csv(
 
         raise ValueError(
             "\nFaltan las siguientes columnas en "
-            "la hoja Montaje:\n\n"
+            f"la hoja {NOMBRE_HOJA}:\n\n"
             + "\n".join(
                 columnas_faltantes
             )

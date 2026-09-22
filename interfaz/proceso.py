@@ -38,10 +38,7 @@
 
 import threading
 
-from tkinter import (
-    IntVar,
-    messagebox
-)
+from tkinter import IntVar
 
 import customtkinter as ctk
 
@@ -52,6 +49,12 @@ import customtkinter as ctk
 
 from depurador import (
     ejecutar_depuracion
+)
+
+from depuracion.carga_datos import DepuracionCancelada
+from interfaz.confirmacion import (
+    confirmar_columnas_faltantes, solicitar_confirmacion,
+    mostrar_advertencia, mostrar_error, mostrar_exito,
 )
 
 
@@ -169,7 +172,9 @@ class GestorProceso:
                 (
                     archivo_origen,
                     ruta_excel,
-                    ruta_csv
+                    ruta_csv,
+                    archivo_data,
+                    archivo_filtros
                 )
 
         callback_resumen:
@@ -636,7 +641,9 @@ class GestorProceso:
         (
             archivo_origen,
             ruta_excel,
-            ruta_csv
+            ruta_csv,
+            archivo_data,
+            archivo_filtros
         ) = self.obtener_rutas()
 
 
@@ -646,7 +653,8 @@ class GestorProceso:
 
         if not archivo_origen:
 
-            messagebox.showwarning(
+            mostrar_advertencia(
+                self.parent,
                 "Archivo faltante",
                 "Selecciona la base de entrada."
             )
@@ -660,7 +668,8 @@ class GestorProceso:
 
         if not ruta_excel:
 
-            messagebox.showwarning(
+            mostrar_advertencia(
+                self.parent,
                 "Ruta faltante",
                 "Selecciona dónde guardar el archivo Excel."
             )
@@ -674,7 +683,8 @@ class GestorProceso:
 
         if not ruta_csv:
 
-            messagebox.showwarning(
+            mostrar_advertencia(
+                self.parent,
                 "Ruta faltante",
                 "Selecciona dónde guardar el archivo CSV."
             )
@@ -686,7 +696,21 @@ class GestorProceso:
         # CONFIRMACIÓN
         # ====================================================
 
-        confirmar = messagebox.askyesno(
+        if not archivo_data or not archivo_filtros:
+            faltantes = []
+            if not archivo_data:
+                faltantes.append("data (cruce de DOT)")
+            if not archivo_filtros:
+                faltantes.append("FILTROS ESPAÑOL (catálogo de nombres)")
+            mostrar_advertencia(
+                self.parent, "Archivos auxiliares faltantes",
+                "Selecciona los siguientes archivos antes de iniciar:\n\n"
+                + "\n".join(f"• {nombre}" for nombre in faltantes),
+            )
+            return
+
+        confirmar = solicitar_confirmacion(
+            self.parent,
             "Iniciar depuración",
             (
                 "¿Deseas iniciar el proceso de depuración?\n\n"
@@ -705,6 +729,9 @@ class GestorProceso:
         # ACTUALIZAR CRITERIO
         # ====================================================
 
+        self.rutas_ejecucion = (
+            archivo_origen, ruta_excel, ruta_csv, archivo_data, archivo_filtros
+        )
         self.actualizar_criterio_coincidencias()
 
 
@@ -778,8 +805,10 @@ class GestorProceso:
             (
                 archivo_origen,
                 ruta_excel,
-                ruta_csv
-            ) = self.obtener_rutas()
+                ruta_csv,
+                archivo_data,
+                archivo_filtros
+            ) = self.rutas_ejecucion
 
 
             # ------------------------------------------------
@@ -796,7 +825,10 @@ class GestorProceso:
                 ruta_excel,
                 ruta_csv,
                 minimo_coincidencias=self.minimo_coincidencias,
-                callback=self.recibir_progreso
+                callback=self.recibir_progreso,
+                confirmar_columnas_faltantes=self.confirmar_columnas_faltantes,
+                archivo_data=archivo_data,
+                archivo_filtros=archivo_filtros
             )
 
 
@@ -827,6 +859,9 @@ class GestorProceso:
             )
 
 
+        except DepuracionCancelada:
+            self.parent.after(0, self.proceso_cancelado)
+
         except Exception as error:
 
     # ------------------------------------------------
@@ -851,6 +886,38 @@ class GestorProceso:
     # ========================================================
     # RECIBIR PROGRESO
     # ========================================================
+
+    def confirmar_columnas_faltantes(self, columnas):
+        """Espera la decisión sin bloquear el hilo principal de la ventana."""
+        respuesta_lista = threading.Event()
+        resultado = {"continuar": False, "error": None}
+
+        def preguntar():
+            try:
+                resultado["continuar"] = confirmar_columnas_faltantes(
+                    self.parent, columnas
+                )
+            except Exception as error:
+                resultado["error"] = error
+            finally:
+                respuesta_lista.set()
+
+        self.parent.after(0, preguntar)
+        respuesta_lista.wait()
+        if resultado["error"] is not None:
+            raise resultado["error"]
+        return resultado["continuar"]
+
+    def proceso_cancelado(self):
+        """Restablece los controles sin presentar la cancelación como error."""
+        self.reiniciar_progreso()
+        self.proceso_en_ejecucion = False
+        self.boton_iniciar.configure(
+            state="normal", text="▶  Iniciar depuración"
+        )
+        mensaje = "Depuración cancelada. No se generaron archivos."
+        self.label_progreso.configure(text=f"  {mensaje}")
+        self.actualizar_estado_exterior(mensaje, AZUL_CLARO, AZUL)
 
     def recibir_progreso(
         self,
@@ -1299,11 +1366,14 @@ class GestorProceso:
         (
             archivo_origen,
             ruta_excel,
-            ruta_csv
-        ) = self.obtener_rutas()
+            ruta_csv,
+            archivo_data,
+            archivo_filtros
+        ) = self.rutas_ejecucion
 
 
-        messagebox.showinfo(
+        mostrar_exito(
+            self.parent,
             "Proceso completado",
             (
                 "La depuración terminó correctamente.\n\n"
@@ -1311,7 +1381,9 @@ class GestorProceso:
                 f"Registros en montaje: {cantidad_montaje:,}\n"
                 f"Registros rechazados: {cantidad_rechazos:,}\n\n"
                 f"Excel:\n{ruta_excel}\n\n"
-                f"CSV:\n{ruta_csv}"
+                f"CSV:\n{ruta_csv}\n\n"
+                f"Data utilizado:\n{archivo_data}\n\n"
+                f"Filtros utilizados:\n{archivo_filtros}"
             )
         )
 
@@ -1420,7 +1492,8 @@ class GestorProceso:
         # MOSTRAR ERROR
         # ====================================================
 
-        messagebox.showerror(
+        mostrar_error(
+            self.parent,
             "Error durante la depuración",
             str(error)
         )

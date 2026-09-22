@@ -7,7 +7,7 @@
 # Hojas:
 #
 #   1. Base
-#   2. Montaje
+#   2. Montaje Español
 #   3. Rechazos
 #
 # ============================================================
@@ -48,7 +48,8 @@ def crear_copias_exportacion(
     rechazos
 ):
 
-    base_export = base.copy()
+    # Base solo se lee al exportar; no necesita otra copia completa.
+    base_export = base
 
     montaje_export = montaje.copy()
 
@@ -78,13 +79,8 @@ def convertir_fechas_exportacion(
         # Base
         # ----------------------------------------------------
 
-        if columna in base_export.columns:
-
-            base_export[columna] = pd.to_datetime(
-                base_export[columna],
-                errors="coerce",
-                dayfirst=False
-            )
+        # Base se conserva sin conversiones; las fechas solo se preparan
+        # para las hojas de resultados.
 
 
         # ----------------------------------------------------
@@ -180,6 +176,13 @@ def generar_excel(
             index=False
         )
 
+        # Un texto recibido (por ejemplo '=ABC' en observaciones) debe seguir
+        # siendo texto en Base, no convertirse en una fórmula o error de Excel.
+        for fila in writer.book[NOMBRE_HOJA_BASE].iter_rows():
+            for celda in fila:
+                if isinstance(celda.value, str):
+                    celda.data_type = "s"
+
 
         # ----------------------------------------------------
         # Montaje
@@ -208,7 +211,6 @@ def generar_excel(
         # ====================================================
 
         for nombre_hoja in [
-            NOMBRE_HOJA_BASE,
             NOMBRE_HOJA_MONTAJE,
             NOMBRE_HOJA_RECHAZOS
         ]:
@@ -385,11 +387,19 @@ def verificar_excel(
 # EXPORTAR EXCEL
 # ============================================================
 
+def preparar_exportacion(base, montaje, rechazos):
+    """Prepara una única vez los datos compartidos por Excel y CSV."""
+    return convertir_fechas_exportacion(
+        *crear_copias_exportacion(base, montaje, rechazos)
+    )
+
+
 def exportar_excel(
     base,
     montaje,
     rechazos,
-    ruta_excel
+    ruta_excel,
+    datos_preparados=False
 ):
 
     ruta_excel = Path(
@@ -401,30 +411,19 @@ def exportar_excel(
     # Crear copias.
     # --------------------------------------------------------
 
-    (
-        base_export,
-        montaje_export,
-        rechazos_export
-    ) = crear_copias_exportacion(
-        base,
-        montaje,
-        rechazos
-    )
+    if datos_preparados:
+        base_export, montaje_export, rechazos_export = base, montaje, rechazos
+    else:
+        base_export, montaje_export, rechazos_export = preparar_exportacion(
+            base, montaje, rechazos
+        )
 
 
     # --------------------------------------------------------
     # Convertir fechas.
     # --------------------------------------------------------
 
-    (
-        base_export,
-        montaje_export,
-        rechazos_export
-    ) = convertir_fechas_exportacion(
-        base_export,
-        montaje_export,
-        rechazos_export
-    )
+    # Las fechas ya están preparadas para ambos formatos de salida.
 
 
     # --------------------------------------------------------

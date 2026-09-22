@@ -3,6 +3,8 @@ from datetime import datetime
 
 import pandas as pd
 
+from depuracion.carga_datos import validar_archivo_entrada
+
 from config import (
     RUTA_DESCARGAS,
     EXTENSIONES_PERMITIDAS,
@@ -42,6 +44,29 @@ def normalizar_dot(valor):
 # ============================================================
 # BUSCAR ARCHIVO DATA
 # ============================================================
+
+def validar_dot(montaje, rechazos):
+    """Rechaza DOT ausentes o no numéricos, sin consultar su existencia real.
+
+    Solo se permiten dígitos ASCII tras normalizar espacios exteriores y .0.
+    Los rechazados conservan su valor recibido para poder revisar el problema.
+    """
+    originales = montaje["DOT"].astype("string").str.strip()
+    normalizados = montaje["DOT"].map(normalizar_dot).astype("string")
+    vacios = originales.isna() | originales.eq("").fillna(False)
+    validos = normalizados.str.fullmatch(r"[0-9]+", na=False) & ~vacios
+
+    descartados = montaje.loc[~validos].copy()
+    if not descartados.empty:
+        descartados.insert(1, "Motivo Rechazo", "DOT invalido")
+        rechazos = pd.concat([rechazos, descartados], ignore_index=True)
+
+    montaje = montaje.loc[validos].copy()
+    montaje["DOT"] = normalizados.loc[validos]
+    print(f"\nRegistros rechazados sin DOT: {vacios.sum():,}")
+    print(f"Registros rechazados por formato DOT: {(~validos & ~vacios).sum():,}")
+    return montaje, rechazos
+
 
 def buscar_archivo_data():
     """
@@ -531,11 +556,11 @@ def eliminar_columnas_auxiliares(montaje):
 # PROCESO COMPLETO DE CRUCES
 # ============================================================
 
-def procesar_cruces(montaje, rechazos):
+def procesar_cruces(montaje, rechazos, archivo_data=None):
     """
     Ejecuta todo el proceso relacionado con DOT:
 
-    1. Rechazar DOT repetidos dentro de la misma base.
+    1. Validar formato de DOT y rechazar repetidos dentro de la misma base.
     2. Buscar automáticamente el archivo data más reciente.
     3. Cargar data.
     4. Validar columnas.
@@ -561,8 +586,10 @@ def procesar_cruces(montaje, rechazos):
 
     print("\n")
     print("-" * 60)
-    print("PASO 1: VALIDAR DOT REPETIDOS EN LA MISMA BASE")
+    print("PASO 1: VALIDAR FORMATO Y DUPLICADOS DE DOT")
     print("-" * 60)
+
+    montaje, rechazos = validar_dot(montaje, rechazos)
 
     montaje, rechazos = rechazar_dot_repetidos(
         montaje,
@@ -579,7 +606,10 @@ def procesar_cruces(montaje, rechazos):
     print("PASO 2: BUSCAR ARCHIVO DATA")
     print("-" * 60)
 
-    archivo_data = buscar_archivo_data()
+    archivo_data = (
+        buscar_archivo_data() if archivo_data is None
+        else validar_archivo_entrada(archivo_data)
+    )
 
     # ========================================================
     # PASO 3

@@ -115,6 +115,8 @@ class GestorArchivos:
         self.ruta_excel = None
 
         self.ruta_csv = None
+        self.archivo_data = None
+        self.archivo_filtros = None
 
 
         # ----------------------------------------------------
@@ -166,8 +168,10 @@ class GestorArchivos:
         La sección contiene:
 
             1. Archivo de entrada.
-            2. Archivo Excel de salida.
-            3. Archivo CSV de salida.
+            2. Archivo data para cruce DOT.
+            3. Archivo FILTROS ESPAÑOL.
+            4. Archivo Excel de salida.
+            5. Archivo CSV de salida.
 
         Parámetros
         ----------
@@ -242,8 +246,7 @@ class GestorArchivos:
         label_descripcion = ctk.CTkLabel(
             self.frame_seccion,
             text=(
-                "Selecciona la base de entrada y las rutas "
-                "de salida para Excel y CSV."
+                "Selecciona la base, los archivos auxiliares y los destinos de salida."
             ),
             font=FUENTE_SUBTITULO,
             text_color="#64748B"
@@ -277,7 +280,7 @@ class GestorArchivos:
 
         self.entrada_excel = self.crear_fila_archivo(
             parent=self.frame_seccion,
-            fila=3,
+            fila=5,
             texto="Archivo Excel de salida:",
             tipo="excel"
         )
@@ -289,12 +292,18 @@ class GestorArchivos:
 
         self.entrada_csv = self.crear_fila_archivo(
             parent=self.frame_seccion,
-            fila=4,
+            fila=6,
             texto="Archivo CSV de salida:",
             tipo="csv"
         )
 
 
+        self.entrada_data = self.crear_fila_archivo(
+            self.frame_seccion, 3, "Archivo data (cruce DOT):", "data"
+        )
+        self.entrada_filtros = self.crear_fila_archivo(
+            self.frame_seccion, 4, "Archivo FILTROS ESPAÑOL:", "filtros"
+        )
         return self.frame_seccion
 
 
@@ -371,6 +380,7 @@ class GestorArchivos:
         entrada = crear_entrada_ruta(
             parent
         )
+        entrada.configure(state="readonly")
 
         entrada.grid(
             row=fila,
@@ -429,7 +439,20 @@ class GestorArchivos:
         # ARCHIVO DE ENTRADA
         # ====================================================
 
-        if tipo == "base":
+        if tipo in ("data", "filtros"):
+            nombre = "data" if tipo == "data" else "FILTROS ESPAÑOL"
+            archivo = filedialog.askopenfilename(
+                parent=self.parent.winfo_toplevel(),
+                title=f"Seleccionar archivo {nombre}",
+                filetypes=[("Archivos Excel y CSV", "*.xlsx *.xls *.csv")],
+            )
+            if not archivo:
+                return
+            ruta = Path(archivo)
+            setattr(self, f"archivo_{tipo}", ruta)
+            self.colocar_ruta(getattr(self, f"entrada_{tipo}"), ruta)
+
+        elif tipo == "base":
 
             archivo = filedialog.askopenfilename(
                 title="Seleccionar base de entrada",
@@ -583,6 +606,7 @@ class GestorArchivos:
             Ruta del archivo seleccionada.
         """
 
+        entrada.configure(state="normal")
         entrada.delete(
             0,
             "end"
@@ -592,6 +616,7 @@ class GestorArchivos:
             0,
             str(ruta)
         )
+        entrada.configure(state="readonly")
 
 
     # ========================================================
@@ -600,7 +625,7 @@ class GestorArchivos:
 
     def obtener_rutas(self):
         """
-        Retorna las tres rutas seleccionadas.
+        Retorna base, Excel, CSV, data y filtros, en ese orden.
 
         Retorna
         -------
@@ -608,14 +633,18 @@ class GestorArchivos:
             (
                 archivo_origen,
                 ruta_excel,
-                ruta_csv
+                ruta_csv,
+                archivo_data,
+                archivo_filtros
             )
         """
 
         return (
             self.archivo_origen,
             self.ruta_excel,
-            self.ruta_csv
+            self.ruta_csv,
+            self.archivo_data,
+            self.archivo_filtros
         )
 
 
@@ -625,13 +654,13 @@ class GestorArchivos:
 
     def rutas_completas(self):
         """
-        Verifica si el usuario ha seleccionado los tres
+        Verifica si el usuario ha seleccionado los cinco
         archivos necesarios.
 
         Retorna
         -------
         bool
-            True si las tres rutas existen.
+            True si las cinco rutas están seleccionadas.
             False si falta alguna.
         """
 
@@ -639,4 +668,6 @@ class GestorArchivos:
             self.archivo_origen is not None
             and self.ruta_excel is not None
             and self.ruta_csv is not None
+            and self.archivo_data is not None
+            and self.archivo_filtros is not None
         )
