@@ -6,7 +6,7 @@ if not exist ".venv\Scripts\python.exe" (
     echo Primero ejecuta instalar.cmd.
     goto error
 )
-".venv\Scripts\python.exe" iniciar.py
+start "" wscript.exe "%~dp0iniciar.vbs"
 if errorlevel 1 goto error
 exit /b 0
 :error

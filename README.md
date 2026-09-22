@@ -11,7 +11,13 @@ referencia y generar un Excel de revisión y un CSV para campañas.
    de escritura. Conserva sus subcarpetas, incluida `Archivos`.
 3. Abre **`instalar.cmd`** con doble clic. Creará `.venv` e instalará las
    dependencias de `requirements.txt`. Necesita conexión a Internet durante la instalación.
-4. Cuando indique que terminó, abre **`iniciar.cmd`**.
+4. Cuando indique que terminó, abre **`iniciar.vbs`** para iniciar sin consola.
+
+Puedes crear un acceso directo a `iniciar.vbs` en el escritorio. Este lanzador
+utiliza `pythonw.exe` del entorno `.venv`. Los mensajes y errores se guardan en
+`logs/aplicacion.log`; al superar 5 MiB se conserva una copia anterior en el
+siguiente arranque. `iniciar.cmd` también delega en este lanzador, aunque Windows
+puede mostrar brevemente la consola al abrir un archivo `.cmd`.
 
 No hace falta instalar Microsoft Excel. No se requieren rutas de un usuario
 específico ni activar manualmente el entorno virtual. Los lanzadores trabajan

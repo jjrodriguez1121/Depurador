@@ -36,6 +36,7 @@
 
 
 from config import RUTA_ARCHIVOS
+from interfaz.fondo_sidebar import componer_fondo
 
 from interfaz.confirmacion import solicitar_confirmacion
 
@@ -162,13 +163,16 @@ class Aplicacion(ctk.CTk):
             "Depurador de Bases - TRUCKING"
         )
 
+        # Windows informa píxeles físicos; CTk.geometry usa unidades lógicas.
+        escala = self._get_window_scaling()
+        ancho_disponible = max(1, int((self.winfo_screenwidth() - 40) / escala))
+        alto_disponible = max(1, int((self.winfo_screenheight() - 100) / escala))
         self.geometry(
-            f"{ANCHO_INICIAL}x{ALTO_INICIAL}"
+            f"{min(ANCHO_INICIAL, ancho_disponible)}x{min(ALTO_INICIAL, alto_disponible)}"
         )
-
         self.minsize(
-            ANCHO_MINIMO,
-            ALTO_MINIMO
+            min(ANCHO_MINIMO, ancho_disponible),
+            min(ALTO_MINIMO, alto_disponible)
         )
 
         self.configure(
@@ -460,7 +464,16 @@ class Aplicacion(ctk.CTk):
         ventana, respetando los límites establecidos.
         """
 
-        ancho_ventana = self.winfo_width()
+        if event is not None and event.widget is not self:
+            return
+        ancho_ventana = self.winfo_width() / self._get_window_scaling()
+
+        # En ventanas estrechas se prioriza el formulario sobre la decoración.
+        if ancho_ventana < ANCHO_MINIMO:
+            self.sidebar.grid_remove()
+            return
+        if not self.sidebar.winfo_ismapped():
+            self.sidebar.grid()
 
 
         # ----------------------------------------------------
@@ -500,7 +513,7 @@ class Aplicacion(ctk.CTk):
         # EVITAR ACTUALIZACIONES INNECESARIAS
         # ====================================================
 
-        if self.sidebar.winfo_width() == nuevo_ancho:
+        if self.sidebar.cget("width") == nuevo_ancho:
 
             return
 
@@ -537,6 +550,7 @@ class Aplicacion(ctk.CTk):
         ancho = event.width
 
         alto = event.height
+        escala = self.label_sidebar._get_widget_scaling()
 
 
         # ----------------------------------------------------
@@ -556,7 +570,7 @@ class Aplicacion(ctk.CTk):
             self.imagen_sidebar_original,
             (
                 ancho,
-                alto
+                max(1, alto - round(80 * escala))
             ),
             method=Image.Resampling.LANCZOS
         )
@@ -566,14 +580,6 @@ class Aplicacion(ctk.CTk):
         # CREAR FONDO
         # ====================================================
 
-        fondo = Image.new(
-            "RGB",
-            (
-                ancho,
-                alto
-            ),
-            AZUL_OSCURO
-        )
 
 
         # ====================================================
@@ -584,17 +590,11 @@ class Aplicacion(ctk.CTk):
             ancho - imagen.width
         ) // 2
 
-        posicion_y = (
-            alto - imagen.height
-        ) // 2
+        posicion_y = max(0, (alto - round(80 * escala) - imagen.height) // 2)
 
 
-        fondo.paste(
-            imagen,
-            (
-                posicion_x,
-                posicion_y
-            )
+        fondo = componer_fondo(
+            imagen, ancho, alto, posicion_x, posicion_y, AZUL_OSCURO
         )
 
 
@@ -606,8 +606,8 @@ class Aplicacion(ctk.CTk):
             light_image=fondo,
             dark_image=fondo,
             size=(
-                ancho,
-                alto
+                ancho / escala,
+                alto / escala
             )
         )
 
