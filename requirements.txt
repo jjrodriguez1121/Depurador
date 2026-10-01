@@ -1,6 +1,25 @@
-# Dependencias directas verificadas con Python 3.12.
+# Dependencias directas del proyecto.
+#
+# Las líneas que empiezan con # son comentarios para las personas y pip las
+# ignora. Las dependencias transitivas, como numpy o python-dateutil, las
+# instala pip automáticamente cuando las necesita una dependencia directa.
+#
+# Las versiones están fijadas con == para que una instalación nueva reciba
+# exactamente las versiones verificadas por el proyecto y no una actualización
+# incompatible de forma accidental. El entorno funciona con Python 3.12 y
+# también fue comprobado con Python 3.13 de 64 bits.
+
+# Procesamiento de las bases de datos tabulares, filtros, cruces y limpieza.
 pandas==3.0.1
+
+# Lectura y escritura de archivos Excel modernos (.xlsx).
 openpyxl==3.1.5
+
+# Componentes gráficos de la interfaz de escritorio basada en Tkinter.
 customtkinter==6.0.0
+
+# Carga y tratamiento de imágenes usadas por la interfaz, incluido el sidebar.
 Pillow==12.3.0
+
+# Lectura de archivos Excel antiguos en formato .xls.
 xlrd==2.0.1
