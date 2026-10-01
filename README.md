@@ -5,12 +5,14 @@ referencia y generar un Excel de revisión y un CSV para campañas.
 
 ## Instalación en Windows
 
-1. Instala **Python 3.12 de 64 bits**, incluyendo el lanzador `py`, `pip` y
-   el componente **Tcl/Tk**. Python 3.12 es la versión con la que se verifica el proyecto.
+1. Instala **Python 3.12 o posterior de 64 bits**, incluyendo `pip` y el
+   componente **Tcl/Tk**. El proyecto se verifica con Python 3.12; también
+   funciona con 3.13 si está instalado correctamente.
 2. Copia o descarga la carpeta completa del proyecto en una ubicación con permiso
    de escritura. Conserva sus subcarpetas, incluida `Archivos`.
-3. Abre **`instalar.cmd`** con doble clic. Creará `.venv` e instalará las
-   dependencias de `requirements.txt`. Necesita conexión a Internet durante la instalación.
+3. Abre **`instalar.cmd`** con doble clic. Si no hay lanzador `py`, el script
+   intentará crear el entorno con `python -m venv .venv`. Necesita conexión a
+   Internet durante la instalación.
 4. Cuando indique que terminó, abre **`iniciar.vbs`** para iniciar sin consola.
 
 Puedes crear un acceso directo a `iniciar.vbs` en el escritorio. Este lanzador
@@ -31,7 +33,11 @@ y ejecuta allí `instalar.cmd`: los entornos virtuales no son portables.
 Abre PowerShell dentro de la carpeta del proyecto:
 
 ```powershell
-py -3.12 -m venv .venv
+# Si el lanzador py existe, usa la versión 3.12+ disponible:
+py -3 -m venv .venv
+# Si no existe, usa el comando de Python instalado:
+# python -m venv .venv
+
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m pip check
 .\.venv\Scripts\python.exe iniciar.py
@@ -149,8 +155,8 @@ mantiene separada de la depuración y no se vuelve a copiar para exportarla.
 
 ## Problemas frecuentes
 
-- **No se reconoce `py`:** instala el lanzador de Python o usa la ruta completa
-  al ejecutable Python 3.12 en lugar de `py -3.12` en la instalación manual.
+- **No se reconoce `py`:** instala el lanzador de Python o usa `python -m venv .venv`
+  con una instalación de Python 3.12+ en la instalación manual.
 - **Falta un módulo:** ejecuta `instalar.cmd` y luego inicia con `iniciar.cmd`,
   para usar el mismo entorno donde instalaste las dependencias.
 - **Falta tkinter/Tcl/Tk:** modifica la instalación de Python e incluye ese componente.

@@ -4,7 +4,7 @@ La interfaz utiliza los archivos elegidos por el usuario. Las rutas auxiliares
 solo sirven como respaldo para llamadas desde código que no proporcionen rutas.
 """
 
-import os
+import os 
 from pathlib import Path
 
 RUTA_PROYECTO = Path(__file__).resolve().parent
