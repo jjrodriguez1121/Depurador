@@ -53,11 +53,20 @@ Se reutiliza el entorno existente; no se borran las bases ni los resultados.
 3. Selecciona **FILTROS ESPAÑOL**: los nombres van en la primera columna,
    sin encabezado. Debe contener al menos un nombre utilizable.
 4. Elige los destinos del Excel y el CSV. Usa archivos distintos de las entradas.
-5. Elige una o dos coincidencias para representantes e inicia la depuración.
+5. Elige una o dos coincidencias para representantes y el **prefijo telefónico**
+   (por defecto `9`). Debe contener uno o más dígitos del `0` al `9`, sin espacios
+   ni signos. Se conserva como texto, incluidos ceros iniciales como `009`.
+   Inicia la depuración y revisa el prefijo en la confirmación.
 6. Si faltan columnas, revisa el aviso y elige continuar creándolas vacías o cancelar.
 
 Los archivos auxiliares seleccionados pueden tener cualquier nombre y estar en
 cualquier carpeta. En la interfaz no se eligen automáticamente.
+
+El prefijo se agrega únicamente a `Phone` después de validar los diez dígitos
+y utilizar `Cell_Num` como respaldo cuando corresponda. No se agrega a `Cell_Num`
+ni a los valores originales de la hoja Base. Puedes cambiarlo entre ejecuciones;
+el campo se bloquea mientras se procesa. Desde código, usa
+`ejecutar_depuracion(..., prefijo="57")`; si lo omites se utiliza `9`.
 
 La base CSV admite coma o punto y coma, con codificación UTF-8. Los campos que
 contengan separadores o saltos de línea deben estar entre comillas. Las filas

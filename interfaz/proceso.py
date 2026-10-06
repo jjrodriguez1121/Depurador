@@ -52,6 +52,7 @@ from depurador import (
 )
 
 from depuracion.carga_datos import DepuracionCancelada
+from depuracion.telefonos import validar_prefijo
 from interfaz.confirmacion import (
     confirmar_columnas_faltantes, solicitar_confirmacion,
     mostrar_advertencia, mostrar_error, mostrar_exito,
@@ -347,6 +348,7 @@ class GestorProceso:
         # ====================================================
 
         self.crear_criterio_coincidencias()
+        self.crear_selector_prefijo()
 
 
         # ====================================================
@@ -474,6 +476,23 @@ class GestorProceso:
     # ========================================================
     # CREAR CRITERIO DE COINCIDENCIAS
     # ========================================================
+
+    def crear_selector_prefijo(self):
+        """Permite configurar el prefijo de la siguiente ejecución."""
+        fila = ctk.CTkFrame(self.card_proceso, fg_color="transparent")
+        fila.pack(fill="x", padx=22, pady=(6, 4))
+        ctk.CTkLabel(
+            fila, text="Prefijo telefónico:",
+            font=FUENTE_NORMAL_NEGRITA, text_color=AZUL_OSCURO,
+        ).pack(side="left", padx=(0, 15))
+        self.entrada_prefijo = ctk.CTkEntry(fila, width=100)
+        self.entrada_prefijo.insert(0, "9")
+        self.entrada_prefijo.pack(side="left")
+        ctk.CTkLabel(
+            self.card_proceso,
+            text="Se agrega al inicio de Phone. Solo números; ejemplo: 9 o 57.",
+            font=FUENTE_SUBTITULO, text_color=GRIS_TEXTO,
+        ).pack(anchor="w", padx=22)
 
     def crear_criterio_coincidencias(self):
         """
@@ -709,11 +728,19 @@ class GestorProceso:
             )
             return
 
+        try:
+            prefijo = validar_prefijo(self.entrada_prefijo.get())
+        except ValueError as error:
+            mostrar_advertencia(self.parent, "Prefijo inválido", str(error))
+            self.entrada_prefijo.focus_set()
+            return
+
         confirmar = solicitar_confirmacion(
             self.parent,
             "Iniciar depuración",
             (
                 "¿Deseas iniciar el proceso de depuración?\n\n"
+                f"Prefijo telefónico: {prefijo}\n\n"
                 "La aplicación puede tardar varios minutos "
                 "dependiendo del tamaño de la base."
             )
@@ -732,6 +759,8 @@ class GestorProceso:
         self.rutas_ejecucion = (
             archivo_origen, ruta_excel, ruta_csv, archivo_data, archivo_filtros
         )
+        self.prefijo_ejecucion = prefijo
+        self.entrada_prefijo.configure(state="disabled")
         self.actualizar_criterio_coincidencias()
 
 
@@ -828,7 +857,8 @@ class GestorProceso:
                 callback=self.recibir_progreso,
                 confirmar_columnas_faltantes=self.confirmar_columnas_faltantes,
                 archivo_data=archivo_data,
-                archivo_filtros=archivo_filtros
+                archivo_filtros=archivo_filtros,
+                prefijo=self.prefijo_ejecucion
             )
 
 
@@ -910,6 +940,7 @@ class GestorProceso:
 
     def proceso_cancelado(self):
         """Restablece los controles sin presentar la cancelación como error."""
+        self.entrada_prefijo.configure(state="normal")
         self.reiniciar_progreso()
         self.proceso_en_ejecucion = False
         self.boton_iniciar.configure(
@@ -1249,6 +1280,7 @@ class GestorProceso:
         # ====================================================
 
         self.proceso_en_ejecucion = False
+        self.entrada_prefijo.configure(state="normal")
 
 
         # ====================================================
@@ -1377,6 +1409,7 @@ class GestorProceso:
             "Proceso completado",
             (
                 "La depuración terminó correctamente.\n\n"
+                f"Prefijo utilizado: {self.prefijo_ejecucion}\n\n"
                 f"Registros originales: {cantidad_base:,}\n"
                 f"Registros en montaje: {cantidad_montaje:,}\n"
                 f"Registros rechazados: {cantidad_rechazos:,}\n\n"
@@ -1447,6 +1480,7 @@ class GestorProceso:
         # ====================================================
 
         self.proceso_en_ejecucion = False
+        self.entrada_prefijo.configure(state="normal")
 
 
         # ====================================================

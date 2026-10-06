@@ -36,7 +36,7 @@ from depuracion.carga_datos import (
 )
 
 from depuracion.telefonos import (
-    procesar_telefonos
+    procesar_telefonos, validar_prefijo
 )
 
 from depuracion.representantes import (
@@ -169,7 +169,8 @@ def ejecutar_depuracion(
     callback=None,
     confirmar_columnas_faltantes=None,
     archivo_data=None,
-    archivo_filtros=None
+    archivo_filtros=None,
+    prefijo="9"
 ):
     """
     Ejecuta el proceso completo de depuración.
@@ -206,6 +207,9 @@ def ejecutar_depuracion(
         Archivos auxiliares elegidos por el usuario. Si se omiten al llamar
         desde código, se conserva la búsqueda automática anterior.
 
+    prefijo:
+        Texto numérico que se antepone a Phone. Por defecto "9".
+
     Retorna
     -------
     base:
@@ -223,6 +227,7 @@ def ejecutar_depuracion(
     # INICIO
     # ========================================================
 
+    prefijo = validar_prefijo(prefijo)
     print("\n")
     print("=" * 70)
     print("             DEPURADOR DE BASES - TRUKING")
@@ -377,7 +382,8 @@ def ejecutar_depuracion(
 
     montaje, rechazos = procesar_telefonos(
         montaje,
-        rechazos
+        rechazos,
+        prefijo=prefijo
     )
 
 

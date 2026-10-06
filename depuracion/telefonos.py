@@ -13,7 +13,7 @@
 # 4. Validar Cell_Num.
 # 5. Utilizar Cell_Num como respaldo.
 # 6. Rechazar registros sin teléfono válido.
-# 7. Agregar el prefijo 9 al Phone válido.
+# 7. Agregar el prefijo elegido al Phone válido (9 por defecto).
 #
 # IMPORTANTE:
 #
@@ -361,12 +361,24 @@ def rechazar_sin_telefono(
 
 
 # ============================================================
-# 7. AGREGAR PREFIJO 9
+# 7. AGREGAR PREFIJO
 # ============================================================
 
-def agregar_prefijo_9(montaje):
+def validar_prefijo(prefijo):
+    """Valida texto numérico sin perder ceros iniciales."""
+    if not isinstance(prefijo, str) or not prefijo or not all(
+        "0" <= digito <= "9" for digito in prefijo
+    ):
+        raise ValueError(
+            "Ingresa un prefijo telefónico con uno o más números del 0 al 9, "
+            "sin espacios, letras ni signos."
+        )
+    return prefijo
+
+
+def agregar_prefijo(montaje, prefijo="9"):
     """
-    Agrega el prefijo 9 a los teléfonos válidos de Phone.
+    Agrega el prefijo elegido a los teléfonos válidos de Phone.
 
     IMPORTANTE:
 
@@ -389,20 +401,21 @@ def agregar_prefijo_9(montaje):
     # Crear máscara para identificar teléfonos válidos.
     # --------------------------------------------------------
 
+    prefijo = validar_prefijo(prefijo)
     phone_valido = montaje["Phone"].apply(
         telefono_valido
     )
 
 
     # --------------------------------------------------------
-    # Agregar prefijo 9 únicamente a los teléfonos válidos.
+    # Agregar el prefijo elegido únicamente a los teléfonos válidos.
     # --------------------------------------------------------
 
     montaje.loc[
         phone_valido,
         "Phone"
     ] = (
-        "9"
+        prefijo
         + montaje.loc[
             phone_valido,
             "Phone"
@@ -413,13 +426,19 @@ def agregar_prefijo_9(montaje):
     return montaje
 
 
+def agregar_prefijo_9(montaje):
+    """Compatibilidad con llamadas anteriores que utilizan el prefijo 9."""
+    return agregar_prefijo(montaje, "9")
+
+
 # ============================================================
 # 8. PROCESAR TELÉFONOS
 # ============================================================
 
 def procesar_telefonos(
     montaje,
-    rechazos
+    rechazos,
+    prefijo="9"
 ):
     """
     Ejecuta todo el proceso de teléfonos en el orden correcto.
@@ -429,7 +448,7 @@ def procesar_telefonos(
         1. Normalizar teléfonos.
         2. Utilizar Cell_Num como respaldo.
         3. Rechazar sin teléfono.
-        4. Agregar prefijo 9.
+        4. Agregar el prefijo elegido (9 por defecto).
 
     Retorna:
 
@@ -442,6 +461,7 @@ def procesar_telefonos(
     # NORMALIZAR TELÉFONOS
     # ========================================================
 
+    prefijo = validar_prefijo(prefijo)
     montaje = normalizar_telefonos(
         montaje
     )
@@ -470,11 +490,11 @@ def procesar_telefonos(
 
     # ========================================================
     # PASO 4
-    # AGREGAR PREFIJO 9
+    # AGREGAR PREFIJO
     # ========================================================
 
-    montaje = agregar_prefijo_9(
-        montaje
+    montaje = agregar_prefijo(
+        montaje, prefijo
     )
 
 
