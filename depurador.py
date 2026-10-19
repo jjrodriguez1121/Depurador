@@ -937,7 +937,7 @@ if __name__ == "__main__":
 
     print(
         "\nEste programa debe ser iniciado actualmente "
-        "desde iniciar.cmd o con python iniciar.py."
+        "desde iniciar.vbs o con python iniciar.py."
     )
 
     print(

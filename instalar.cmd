@@ -77,7 +77,7 @@ REM durante la instalacion problemas de tkinter, paquetes o rutas del codigo.
 if errorlevel 1 goto error
 
 REM Si se llega aqui, el entorno y las importaciones esenciales son validos.
-echo Instalacion completada. Abre iniciar.cmd para usar el programa.
+echo Instalacion completada. Abre iniciar.vbs para usar el programa.
 pause
 exit /b 0
 :error

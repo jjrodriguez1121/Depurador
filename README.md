@@ -18,8 +18,7 @@ referencia y generar un Excel de revisión y un CSV para campañas.
 Puedes crear un acceso directo a `iniciar.vbs` en el escritorio. Este lanzador
 utiliza `pythonw.exe` del entorno `.venv`. Los mensajes y errores se guardan en
 `logs/aplicacion.log`; al superar 5 MiB se conserva una copia anterior en el
-siguiente arranque. `iniciar.cmd` también delega en este lanzador, aunque Windows
-puede mostrar brevemente la consola al abrir un archivo `.cmd`.
+siguiente arranque.
 
 No hace falta instalar Microsoft Excel. No se requieren rutas de un usuario
 específico ni activar manualmente el entorno virtual. Los lanzadores trabajan
@@ -166,7 +165,7 @@ mantiene separada de la depuración y no se vuelve a copiar para exportarla.
 
 - **No se reconoce `py`:** instala el lanzador de Python o usa `python -m venv .venv`
   con una instalación de Python 3.12+ en la instalación manual.
-- **Falta un módulo:** ejecuta `instalar.cmd` y luego inicia con `iniciar.cmd`,
+- **Falta un módulo:** ejecuta `instalar.cmd` y luego inicia con `iniciar.vbs`,
   para usar el mismo entorno donde instalaste las dependencias.
 - **Falta tkinter/Tcl/Tk:** modifica la instalación de Python e incluye ese componente.
 - **No puede descargar paquetes:** revisa Internet, proxy o restricciones de la red.
